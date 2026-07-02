@@ -23,7 +23,9 @@ jobs:
 
       - name: Backend lint (Spotless)
         working-directory: backend
-        run: ./mvnw -B spotless:check
+        run: |
+          chmod +x mvnw
+          ./mvnw -B spotless:check
 
       - name: Set up Node 22
         uses: actions/setup-node@v4
@@ -57,7 +59,9 @@ jobs:
 
       - name: Backend test + coverage gate (JaCoCo >= 80%)
         working-directory: backend
-        run: ./mvnw -B verify
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify
 
       - name: Set up Node 22
         uses: actions/setup-node@v4
