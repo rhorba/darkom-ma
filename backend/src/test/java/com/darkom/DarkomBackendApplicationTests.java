@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.DynamicPropertyRegistry;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -12,17 +11,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 class DarkomBackendApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+  @Test
+  void contextLoads() {}
 
-	@org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
-	static class ContainersConfig {
+  @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
+  static class ContainersConfig {
 
-		@Bean
-		@ServiceConnection
-		PostgreSQLContainer<?> postgresContainer() {
-			return new PostgreSQLContainer<>("postgres:16-alpine");
-		}
-	}
+    @Bean
+    @ServiceConnection
+    PostgreSQLContainer<?> postgresContainer() {
+      return new PostgreSQLContainer<>("postgres:16-alpine");
+    }
+  }
 }
