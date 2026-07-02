@@ -99,7 +99,7 @@ jobs:
           semgrep --config=auto --error backend/src frontend/src
 
       - name: Trivy (SCA - dependency CVEs)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -118,15 +118,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build backend image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: backend
           push: false
           tags: darkom-backend:ci
 
       - name: Build frontend image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: frontend
           push: false
