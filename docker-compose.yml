@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - darkom_pgdata:/var/lib/postgresql/data
+    ports: ["${DB_PORT_HOST:-5432}:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      CMI_MERCHANT_ID: ${CMI_MERCHANT_ID}
+      CMI_API_KEY: ${CMI_API_KEY}
+      CMI_SECRET_KEY: ${CMI_SECRET_KEY}
+      CMI_CALLBACK_URL: ${CMI_CALLBACK_URL}
+      EMAIL_API_KEY: ${EMAIL_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports: ["${BACKEND_PORT_HOST:-8080}:8080"]
+
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports: ["${FRONTEND_PORT_HOST:-4200}:80"]
+
+volumes:
+  darkom_pgdata:

@@ -1,0 +1,20 @@
+# Secrets
+.env
+
+# Backend (Maven/Java)
+backend/target/
+
+# Frontend (Node/Angular)
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

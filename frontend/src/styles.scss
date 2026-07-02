@@ -1,0 +1,40 @@
+// Custom Theming for Angular Material
+// For more information: https://material.angular.dev/guide/theming
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+
+  // Darkom design tokens (docs/ui-darkom.md) layered over Material's M3 system variables.
+  & {
+    --mat-sys-primary: #0F6E5C;
+    --mat-sys-secondary: #C98A2C;
+    --mat-sys-error: #B3261E;
+    --darkom-background: #FAFAF8;
+    --darkom-surface: #FFFFFF;
+    --darkom-text: #1B1B1B;
+    --darkom-text-muted: #5F5F5F;
+
+    --darkom-spacing-xs: 4px;
+    --darkom-spacing-sm: 8px;
+    --darkom-spacing-md: 16px;
+    --darkom-spacing-lg: 24px;
+    --darkom-spacing-xl: 40px;
+  }
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: 'Inter', Roboto, "Helvetica Neue", sans-serif;
+  background: var(--darkom-background);
+  color: var(--darkom-text);
+}
