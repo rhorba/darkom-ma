@@ -36,6 +36,9 @@ public class Payment {
   @Column(name = "cmi_transaction_id")
   private String cmiTransactionId;
 
+  @Column(name = "reminder_sent_at")
+  private Instant reminderSentAt;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -96,6 +99,14 @@ public class Payment {
 
   public void setCmiTransactionId(String cmiTransactionId) {
     this.cmiTransactionId = cmiTransactionId;
+  }
+
+  public Instant getReminderSentAt() {
+    return reminderSentAt;
+  }
+
+  public void setReminderSentAt(Instant reminderSentAt) {
+    this.reminderSentAt = reminderSentAt;
   }
 
   public Instant getCreatedAt() {

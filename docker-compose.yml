@@ -30,6 +30,8 @@ services:
       CMI_CALLBACK_URL: ${CMI_CALLBACK_URL}
       EMAIL_API_KEY: ${EMAIL_API_KEY}
       APP_BASE_URL: ${APP_BASE_URL}
+      REMINDER_DAYS_BEFORE_DUE: ${REMINDER_DAYS_BEFORE_DUE:-3}
+      REMINDER_CRON: "${REMINDER_CRON:-0 0 8 * * *}"
     volumes:
       - darkom_lease_documents:/app/data/lease-documents
     depends_on:

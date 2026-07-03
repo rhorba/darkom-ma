@@ -40,3 +40,6 @@ app:
     callback-url: ${CMI_CALLBACK_URL:http://localhost:8080/api/v1/payments/cmi/callback}
   email:
     api-key: ${EMAIL_API_KEY:changeme-email-api-key}
+  reminders:
+    days-before-due: ${REMINDER_DAYS_BEFORE_DUE:3}
+    cron: "${REMINDER_CRON:0 0 8 * * *}"
