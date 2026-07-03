@@ -39,7 +39,8 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/actuator/health", "/api/v1/auth/**")
+                auth.requestMatchers(
+                        "/actuator/health", "/api/v1/auth/**", "/api/v1/payments/cmi/callback")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/properties")
                     .hasRole("LANDLORD")
@@ -48,6 +49,8 @@ public class SecurityConfig {
                     .hasAnyRole("LANDLORD", "PROPERTY_MANAGER")
                     .requestMatchers(HttpMethod.POST, "/api/v1/leases")
                     .hasAnyRole("LANDLORD", "PROPERTY_MANAGER")
+                    .requestMatchers("/api/v1/payments/*/initiate")
+                    .hasRole("TENANT")
                     .anyRequest()
                     .authenticated())
         .exceptionHandling(

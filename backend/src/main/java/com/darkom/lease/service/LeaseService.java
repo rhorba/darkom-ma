@@ -14,6 +14,9 @@ import com.darkom.lease.exception.TenantNotFoundException;
 import com.darkom.lease.exception.UnitAlreadyLeasedException;
 import com.darkom.lease.repository.LeaseDocumentRepository;
 import com.darkom.lease.repository.LeaseRepository;
+import com.darkom.payment.entity.Payment;
+import com.darkom.payment.entity.PaymentStatus;
+import com.darkom.payment.repository.PaymentRepository;
 import com.darkom.property.dto.PropertyResponse;
 import com.darkom.property.dto.UnitResponse;
 import com.darkom.property.exception.PropertyNotFoundException;
@@ -35,6 +38,7 @@ public class LeaseService {
 
   private final LeaseRepository leaseRepository;
   private final LeaseDocumentRepository leaseDocumentRepository;
+  private final PaymentRepository paymentRepository;
   private final UnitService unitService;
   private final PropertyService propertyService;
   private final UserRepository userRepository;
@@ -44,6 +48,7 @@ public class LeaseService {
   public LeaseService(
       LeaseRepository leaseRepository,
       LeaseDocumentRepository leaseDocumentRepository,
+      PaymentRepository paymentRepository,
       UnitService unitService,
       PropertyService propertyService,
       UserRepository userRepository,
@@ -51,6 +56,7 @@ public class LeaseService {
       Clock clock) {
     this.leaseRepository = leaseRepository;
     this.leaseDocumentRepository = leaseDocumentRepository;
+    this.paymentRepository = paymentRepository;
     this.unitService = unitService;
     this.propertyService = propertyService;
     this.userRepository = userRepository;
@@ -126,6 +132,21 @@ public class LeaseService {
     document.setTemplateVersion(LeasePdfService.TEMPLATE_VERSION);
     document.setGeneratedAt(now);
     leaseDocumentRepository.save(document);
+
+    /*
+     * Story 3.1 (payment initiation) depends on this story, not on the later recurring-reminder
+     * story (3.2) - nothing else creates a payment row yet, so without this a tenant would have
+     * nothing to pay. Due on the lease start date; 3.2 takes over generating subsequent months.
+     */
+    Payment firstPayment = new Payment();
+    firstPayment.setId(UUID.randomUUID());
+    firstPayment.setLeaseId(lease.getId());
+    firstPayment.setAmount(lease.getMonthlyRent());
+    firstPayment.setDueDate(lease.getStartDate());
+    firstPayment.setStatus(PaymentStatus.PENDING);
+    firstPayment.setCreatedAt(now);
+    firstPayment.setUpdatedAt(now);
+    paymentRepository.save(firstPayment);
 
     return LeaseResponse.from(lease);
   }

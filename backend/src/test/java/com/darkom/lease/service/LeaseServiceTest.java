@@ -18,6 +18,9 @@ import com.darkom.lease.exception.TenantNotFoundException;
 import com.darkom.lease.exception.UnitAlreadyLeasedException;
 import com.darkom.lease.repository.LeaseDocumentRepository;
 import com.darkom.lease.repository.LeaseRepository;
+import com.darkom.payment.entity.Payment;
+import com.darkom.payment.entity.PaymentStatus;
+import com.darkom.payment.repository.PaymentRepository;
 import com.darkom.property.dto.PropertyResponse;
 import com.darkom.property.dto.UnitResponse;
 import com.darkom.property.entity.UnitStatus;
@@ -34,6 +37,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,6 +47,7 @@ class LeaseServiceTest {
 
   @Mock private LeaseRepository leaseRepository;
   @Mock private LeaseDocumentRepository leaseDocumentRepository;
+  @Mock private PaymentRepository paymentRepository;
   @Mock private UnitService unitService;
   @Mock private PropertyService propertyService;
   @Mock private UserRepository userRepository;
@@ -57,6 +62,7 @@ class LeaseServiceTest {
         new LeaseService(
             leaseRepository,
             leaseDocumentRepository,
+            paymentRepository,
             unitService,
             propertyService,
             userRepository,
@@ -170,6 +176,13 @@ class LeaseServiceTest {
     assertThat(response.unitId()).isEqualTo(unitId);
     verify(unitService).markOccupied(unitId, currentUserId);
     verify(leaseDocumentRepository).save(any());
+
+    ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+    verify(paymentRepository).save(paymentCaptor.capture());
+    Payment firstPayment = paymentCaptor.getValue();
+    assertThat(firstPayment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+    assertThat(firstPayment.getAmount()).isEqualByComparingTo("3500.00");
+    assertThat(firstPayment.getDueDate()).isEqualTo(LocalDate.of(2026, 1, 1));
   }
 
   @Test
