@@ -4,6 +4,7 @@ import { authGuard } from './core/auth/auth.guard';
 import { roleGuard } from './core/auth/role.guard';
 import { LoginComponent } from './features/auth/login/login.component';
 import { PropertiesComponent } from './features/landlord/properties/properties.component';
+import { PropertyDetailComponent } from './features/landlord/properties/property-detail/property-detail.component';
 import { MyLeaseComponent } from './features/tenant/my-lease/my-lease.component';
 import { UsersComponent } from './features/admin/users/users.component';
 
@@ -12,6 +13,11 @@ export const routes: Routes = [
   {
     path: 'properties',
     component: PropertiesComponent,
+    canActivate: [authGuard, roleGuard(['LANDLORD', 'PROPERTY_MANAGER'])]
+  },
+  {
+    path: 'properties/:id',
+    component: PropertyDetailComponent,
     canActivate: [authGuard, roleGuard(['LANDLORD', 'PROPERTY_MANAGER'])]
   },
   {

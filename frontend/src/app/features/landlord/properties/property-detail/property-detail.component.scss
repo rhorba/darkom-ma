@@ -1,0 +1,18 @@
+.spacer {
+  flex: 1 1 auto;
+}
+
+.address {
+  padding: 0 var(--darkom-spacing-lg);
+  color: var(--darkom-text-muted);
+}
+
+.units-table {
+  width: 100%;
+}
+
+.empty-state {
+  padding: var(--darkom-spacing-lg);
+  color: var(--darkom-text-muted);
+  text-align: center;
+}

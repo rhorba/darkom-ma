@@ -41,6 +41,11 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/actuator/health", "/api/v1/auth/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/properties")
+                    .hasRole("LANDLORD")
+                    .requestMatchers(
+                        "/api/v1/properties", "/api/v1/properties/**", "/api/v1/units/**")
+                    .hasAnyRole("LANDLORD", "PROPERTY_MANAGER")
                     .anyRequest()
                     .authenticated())
         .exceptionHandling(

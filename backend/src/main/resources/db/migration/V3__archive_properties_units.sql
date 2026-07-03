@@ -1,0 +1,2 @@
+ALTER TABLE properties ADD COLUMN archived_at TIMESTAMPTZ;
+ALTER TABLE units ADD COLUMN archived_at TIMESTAMPTZ;

@@ -1,0 +1,17 @@
+.spacer {
+  flex: 1 1 auto;
+}
+
+.properties-table {
+  width: 100%;
+
+  tr[mat-row] {
+    cursor: pointer;
+  }
+}
+
+.empty-state {
+  padding: var(--darkom-spacing-lg);
+  color: var(--darkom-text-muted);
+  text-align: center;
+}
