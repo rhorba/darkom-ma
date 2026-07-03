@@ -7,6 +7,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 
 import { API_BASE_URL } from '../../../../core/config/api.config';
+import { Lease } from '../../../../core/leases/lease.model';
 import { Property, Unit } from '../../../../core/properties/property.model';
 import { PropertyDetailComponent } from './property-detail.component';
 
@@ -97,5 +98,49 @@ describe('PropertyDetailComponent', () => {
     httpMock.expectOne(`${API_BASE_URL}/api/v1/properties/p1/units`).flush([{ ...unit, archived: true }]);
 
     expect(component.units()[0].archived).toBeTrue();
+  });
+
+  it('creates a lease, reloads units, and downloads the generated PDF', () => {
+    const lease: Lease = {
+      id: 'l1',
+      unitId: 'u1',
+      tenantId: 't1',
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
+      monthlyRent: 3500,
+      status: 'ACTIVE'
+    };
+
+    fixture.detectChanges();
+    httpMock.expectOne(`${API_BASE_URL}/api/v1/properties/p1`).flush(property);
+    httpMock.expectOne(`${API_BASE_URL}/api/v1/properties/p1/units`).flush([unit]);
+
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(lease) } as never);
+
+    component.openCreateLeaseDialog(unit);
+
+    httpMock
+      .expectOne(`${API_BASE_URL}/api/v1/properties/p1/units`)
+      .flush([{ ...unit, status: 'OCCUPIED' }]);
+
+    const documentReq = httpMock.expectOne(`${API_BASE_URL}/api/v1/leases/l1/document`);
+    expect(documentReq.request.responseType).toBe('blob');
+    documentReq.flush(new Blob(['%PDF-fake'], { type: 'application/pdf' }));
+
+    expect(snackBarSpy.open).toHaveBeenCalled();
+    expect(component.units()[0].status).toBe('OCCUPIED');
+  });
+
+  it('does nothing when the lease dialog is dismissed without a result', () => {
+    fixture.detectChanges();
+    httpMock.expectOne(`${API_BASE_URL}/api/v1/properties/p1`).flush(property);
+    httpMock.expectOne(`${API_BASE_URL}/api/v1/properties/p1/units`).flush([unit]);
+
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(undefined) } as never);
+
+    component.openCreateLeaseDialog(unit);
+
+    httpMock.expectNone(() => true);
+    expect(component.units()).toEqual([unit]);
   });
 });

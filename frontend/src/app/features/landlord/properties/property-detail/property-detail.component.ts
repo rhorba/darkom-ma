@@ -6,8 +6,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
+import { LeaseService } from '../../../../core/leases/lease.service';
+import { triggerDownload } from '../../../../core/leases/trigger-download';
 import { Property, Unit } from '../../../../core/properties/property.model';
 import { PropertyService } from '../../../../core/properties/property.service';
+import { LeaseFormDialogComponent } from '../lease-form-dialog/lease-form-dialog.component';
 import { UnitFormDialogComponent } from '../unit-form-dialog/unit-form-dialog.component';
 
 @Component({
@@ -19,6 +22,7 @@ import { UnitFormDialogComponent } from '../unit-form-dialog/unit-form-dialog.co
 export class PropertyDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly propertyService = inject(PropertyService);
+  private readonly leaseService = inject(LeaseService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -54,6 +58,20 @@ export class PropertyDetailComponent implements OnInit {
     this.propertyService.archiveUnit(unit.id).subscribe(() => {
       this.snackBar.open('Lot archivé', 'OK', { duration: 3000 });
       this.reloadUnits();
+    });
+  }
+
+  openCreateLeaseDialog(unit: Unit): void {
+    const dialogRef = this.dialog.open(LeaseFormDialogComponent, { data: { unitId: unit.id } });
+    dialogRef.afterClosed().subscribe((lease) => {
+      if (!lease) {
+        return;
+      }
+      this.reloadUnits();
+      this.snackBar.open('Bail créé, téléchargement du PDF...', 'OK', { duration: 3000 });
+      this.leaseService.downloadDocument(lease.id).subscribe((blob) => {
+        triggerDownload(blob, `bail-${lease.id}.pdf`);
+      });
     });
   }
 }

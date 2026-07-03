@@ -28,6 +28,9 @@
   <ng-container matColumnDef="actions">
     <th mat-header-cell *matHeaderCellDef></th>
     <td mat-cell *matCellDef="let unit">
+      @if (!unit.archived && unit.status === 'VACANT') {
+        <button mat-button (click)="openCreateLeaseDialog(unit)">Créer un bail</button>
+      }
       @if (!unit.archived) {
         <button mat-button (click)="archiveUnit(unit)">Archiver</button>
       }

@@ -82,6 +82,23 @@ Then I receive 401 and no token
 **Technical Notes**: Double-booking prevention (adversarial checklist item) must be covered by a DB constraint or transactional check, not just app-layer validation.
 **Dependencies**: 2.1
 
+### Story 2.3: Lease creation UI
+**Priority**: Must | **Size**: M | **Specialist**: Frontend Dev
+**Description**: As a Landlord/PM, I want a form to create a lease for a vacant unit and see the generated PDF, so I don't have to call the API by hand (Story 2.2 shipped backend-only).
+**Acceptance Criteria**:
+```gherkin
+Given a vacant unit on a property I manage
+When I submit a lease with tenant email, start date, end date, and rent
+Then the lease is created and I can download the generated PDF
+And the unit's status updates to OCCUPIED without a page reload
+
+Given a unit that already has an ACTIVE lease, or an invalid/non-tenant email, or end date before start date
+When I submit the lease form
+Then I see an inline validation error and no navigation away from the form
+```
+**Technical Notes**: Matches UX Flow 1 "Landlord creates a lease" (docs/ux-darkom.md §3). Entry point: a "Créer un bail" action per vacant unit row on the property detail page (`features/landlord/properties/property-detail`). Calls `POST /api/v1/leases`, `GET /api/v1/leases/:id/document` (existing backend from Story 2.2) - surface 409 (already leased) and 400 (bad dates/unknown tenant) as inline form errors, not generic toasts.
+**Dependencies**: 2.2
+
 ## Epic 3: Payments
 ### Story 3.1: CMI payment initiation + callback
 **Priority**: Must | **Size**: L | **Specialist**: Backend Dev + Security
