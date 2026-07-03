@@ -23,11 +23,13 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
       CMI_MERCHANT_ID: ${CMI_MERCHANT_ID}
       CMI_API_KEY: ${CMI_API_KEY}
       CMI_SECRET_KEY: ${CMI_SECRET_KEY}
       CMI_CALLBACK_URL: ${CMI_CALLBACK_URL}
       EMAIL_API_KEY: ${EMAIL_API_KEY}
+      APP_BASE_URL: ${APP_BASE_URL}
     depends_on:
       db:
         condition: service_healthy

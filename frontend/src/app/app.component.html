@@ -1,5 +1,10 @@
 <mat-toolbar color="primary">
   <span>{{ title }}</span>
+  <span class="spacer"></span>
+  @if (authService.isAuthenticated()) {
+    <span class="user-email">{{ authService.currentUser()?.email }}</span>
+    <button mat-button (click)="logout()">Déconnexion</button>
+  }
 </mat-toolbar>
 
 <router-outlet></router-outlet>

@@ -6,6 +6,7 @@ import com.darkom.auth.dto.RegisterRequest;
 import com.darkom.auth.dto.UserSummary;
 import com.darkom.auth.service.AuthService;
 import com.darkom.auth.service.RefreshTokenResult;
+import com.darkom.common.security.CookieProperties;
 import com.darkom.common.security.JwtService;
 import jakarta.validation.Valid;
 import java.time.Duration;
@@ -28,10 +29,13 @@ public class AuthController {
 
   private final AuthService authService;
   private final JwtService jwtService;
+  private final CookieProperties cookieProperties;
 
-  public AuthController(AuthService authService, JwtService jwtService) {
+  public AuthController(
+      AuthService authService, JwtService jwtService, CookieProperties cookieProperties) {
     this.authService = authService;
     this.jwtService = jwtService;
+    this.cookieProperties = cookieProperties;
   }
 
   @PostMapping("/register")
@@ -55,7 +59,7 @@ public class AuthController {
     ResponseCookie cookie =
         ResponseCookie.from(REFRESH_COOKIE_NAME, result.rawRefreshToken())
             .httpOnly(true)
-            .secure(true)
+            .secure(cookieProperties.isSecure())
             .sameSite("Strict")
             .path(REFRESH_COOKIE_PATH)
             .maxAge(Duration.ofDays(jwtService.refreshTokenTtlDays()))
