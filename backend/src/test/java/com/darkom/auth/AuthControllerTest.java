@@ -36,28 +36,32 @@ class AuthControllerTest extends AbstractIntegrationTest {
 
   @Test
   void registerCreatesUserWithHashedPassword() throws Exception {
+    String email = uniqueEmail("landlord1");
+
     mockMvc
         .perform(
             post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(registerJson("landlord1@example.com", "LANDLORD")))
+                .content(registerJson(email, "LANDLORD")))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.email").value("landlord1@example.com"))
+        .andExpect(jsonPath("$.email").value(email))
         .andExpect(jsonPath("$.role").value("LANDLORD"));
   }
 
   @Test
   void registerRejectsDuplicateEmail() throws Exception {
+    String email = uniqueEmail("dup");
+
     mockMvc.perform(
         post("/api/v1/auth/register")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(registerJson("dup@example.com", "TENANT")));
+            .content(registerJson(email, "TENANT")));
 
     mockMvc
         .perform(
             post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(registerJson("dup@example.com", "TENANT")))
+                .content(registerJson(email, "TENANT")))
         .andExpect(status().isConflict());
   }
 
@@ -67,41 +71,45 @@ class AuthControllerTest extends AbstractIntegrationTest {
         .perform(
             post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(registerJson("wannabeadmin@example.com", "ADMIN")))
+                .content(registerJson(uniqueEmail("wannabeadmin"), "ADMIN")))
         .andExpect(status().isBadRequest());
   }
 
   @Test
   void loginReturnsJwtOnValidCredentials() throws Exception {
+    String email = uniqueEmail("logintest");
+
     mockMvc.perform(
         post("/api/v1/auth/register")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(registerJson("logintest@example.com", "TENANT")));
+            .content(registerJson(email, "TENANT")));
 
     mockMvc
         .perform(
             post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(loginJson("logintest@example.com", "supersecretpw")))
+                .content(loginJson(email, "supersecretpw")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.accessToken").isNotEmpty())
-        .andExpect(jsonPath("$.user.email").value("logintest@example.com"))
+        .andExpect(jsonPath("$.user.email").value(email))
         .andExpect(
             result -> assertThat(result.getResponse().getCookie("refresh_token")).isNotNull());
   }
 
   @Test
   void loginRejectsInvalidCredentialsWith401AndNoToken() throws Exception {
+    String email = uniqueEmail("wrongpw");
+
     mockMvc.perform(
         post("/api/v1/auth/register")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(registerJson("wrongpw@example.com", "TENANT")));
+            .content(registerJson(email, "TENANT")));
 
     mockMvc
         .perform(
             post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(loginJson("wrongpw@example.com", "totally-wrong-password")))
+                .content(loginJson(email, "totally-wrong-password")))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.accessToken").doesNotExist());
   }
@@ -115,17 +123,19 @@ class AuthControllerTest extends AbstractIntegrationTest {
 
   @Test
   void refreshRotatesTokenAndRejectsReuseOfOldOne() throws Exception {
+    String email = uniqueEmail("refreshtest");
+
     mockMvc.perform(
         post("/api/v1/auth/register")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(registerJson("refreshtest@example.com", "TENANT")));
+            .content(registerJson(email, "TENANT")));
 
     MvcResult loginResult =
         mockMvc
             .perform(
                 post("/api/v1/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(loginJson("refreshtest@example.com", "supersecretpw")))
+                    .content(loginJson(email, "supersecretpw")))
             .andExpect(status().isOk())
             .andReturn();
 

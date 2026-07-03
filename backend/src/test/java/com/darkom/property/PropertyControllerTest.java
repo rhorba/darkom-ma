@@ -54,7 +54,7 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void landlordCreatesAndListsOwnProperty() throws Exception {
-    String token = registerAndLogin("landlord1@example.com", "LANDLORD");
+    String token = registerAndLogin(uniqueEmail("landlord1"), "LANDLORD");
 
     mockMvc
         .perform(
@@ -74,8 +74,8 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void getReturnsOwnPropertyButNotFoundForAnotherLandlords() throws Exception {
-    String ownerToken = registerAndLogin("owner3@example.com", "LANDLORD");
-    String otherToken = registerAndLogin("other3@example.com", "LANDLORD");
+    String ownerToken = registerAndLogin(uniqueEmail("owner3"), "LANDLORD");
+    String otherToken = registerAndLogin(uniqueEmail("other3"), "LANDLORD");
 
     MvcResult createResult =
         mockMvc
@@ -101,7 +101,7 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void tenantCannotCreateOrListProperties() throws Exception {
-    String token = registerAndLogin("tenant1@example.com", "TENANT");
+    String token = registerAndLogin(uniqueEmail("tenant1"), "TENANT");
 
     mockMvc
         .perform(
@@ -118,7 +118,7 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void propertyManagerCannotCreateProperty() throws Exception {
-    String token = registerAndLogin("pm1@example.com", "PROPERTY_MANAGER");
+    String token = registerAndLogin(uniqueEmail("pm1"), "PROPERTY_MANAGER");
 
     mockMvc
         .perform(
@@ -131,8 +131,8 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void landlordCannotAccessAnotherLandlordsProperty() throws Exception {
-    String ownerToken = registerAndLogin("owner1@example.com", "LANDLORD");
-    String otherToken = registerAndLogin("other1@example.com", "LANDLORD");
+    String ownerToken = registerAndLogin(uniqueEmail("owner1"), "LANDLORD");
+    String otherToken = registerAndLogin(uniqueEmail("other1"), "LANDLORD");
 
     MvcResult createResult =
         mockMvc
@@ -155,7 +155,7 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void archiveMarksPropertyArchived() throws Exception {
-    String token = registerAndLogin("landlord2@example.com", "LANDLORD");
+    String token = registerAndLogin(uniqueEmail("landlord2"), "LANDLORD");
 
     MvcResult createResult =
         mockMvc
@@ -177,7 +177,7 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void createsAndListsUnitsUnderAProperty() throws Exception {
-    String token = registerAndLogin("landlord3@example.com", "LANDLORD");
+    String token = registerAndLogin(uniqueEmail("landlord3"), "LANDLORD");
 
     MvcResult createResult =
         mockMvc
@@ -211,8 +211,8 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void cannotCreateUnitsUnderAnotherLandlordsProperty() throws Exception {
-    String ownerToken = registerAndLogin("owner2@example.com", "LANDLORD");
-    String otherToken = registerAndLogin("other2@example.com", "LANDLORD");
+    String ownerToken = registerAndLogin(uniqueEmail("owner2"), "LANDLORD");
+    String otherToken = registerAndLogin(uniqueEmail("other2"), "LANDLORD");
 
     MvcResult createResult =
         mockMvc
@@ -238,7 +238,7 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void updatesAndArchivesAUnit() throws Exception {
-    String token = registerAndLogin("landlord4@example.com", "LANDLORD");
+    String token = registerAndLogin(uniqueEmail("landlord4"), "LANDLORD");
 
     MvcResult propertyResult =
         mockMvc
@@ -284,7 +284,7 @@ class PropertyControllerTest extends AbstractIntegrationTest {
 
   @Test
   void rejectsUnitCreationWithNonPositiveRent() throws Exception {
-    String token = registerAndLogin("landlord5@example.com", "LANDLORD");
+    String token = registerAndLogin(uniqueEmail("landlord5"), "LANDLORD");
 
     MvcResult propertyResult =
         mockMvc

@@ -1,5 +1,6 @@
 package com.darkom.common;
 
+import java.util.UUID;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -17,6 +18,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @Import(AbstractIntegrationTest.ContainersConfig.class)
 public abstract class AbstractIntegrationTest {
+
+  /**
+   * Test classes sharing this base class share one Testcontainers Postgres instance (Spring's
+   * context cache reuses it whenever the context configuration matches), with no data cleanup
+   * between classes - a literal email reused across two test classes can collide. Suffix with a
+   * random UUID to make collisions impossible regardless of test execution order.
+   */
+  protected static String uniqueEmail(String localPart) {
+    return localPart + "+" + UUID.randomUUID() + "@example.com";
+  }
 
   @TestConfiguration(proxyBeanMethods = false)
   static class ContainersConfig {
