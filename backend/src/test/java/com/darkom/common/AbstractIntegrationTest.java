@@ -6,6 +6,8 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -27,6 +29,20 @@ public abstract class AbstractIntegrationTest {
    */
   protected static String uniqueEmail(String localPart) {
     return localPart + "+" + UUID.randomUUID() + "@example.com";
+  }
+
+  /**
+   * Without this, LeasePdfService writes real files under the project's ./data/lease-documents
+   * (application.yml's default) on every test run. A src/test/resources/application.yml would
+   * shadow the whole main config instead of overriding one property (Spring only loads the first
+   * classpath:application.yml match, and test-classes wins) - @DynamicPropertySource layers on top
+   * instead.
+   */
+  @DynamicPropertySource
+  static void overrideLeaseDocumentsDir(DynamicPropertyRegistry registry) {
+    registry.add(
+        "app.storage.lease-documents-dir",
+        () -> System.getProperty("java.io.tmpdir") + "/darkom-test-lease-documents");
   }
 
   @TestConfiguration(proxyBeanMethods = false)

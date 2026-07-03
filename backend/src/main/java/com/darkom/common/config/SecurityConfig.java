@@ -46,6 +46,8 @@ public class SecurityConfig {
                     .requestMatchers(
                         "/api/v1/properties", "/api/v1/properties/**", "/api/v1/units/**")
                     .hasAnyRole("LANDLORD", "PROPERTY_MANAGER")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/leases")
+                    .hasAnyRole("LANDLORD", "PROPERTY_MANAGER")
                     .anyRequest()
                     .authenticated())
         .exceptionHandling(

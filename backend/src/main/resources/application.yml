@@ -23,6 +23,8 @@ management:
         include: health,info
 
 app:
+  storage:
+    lease-documents-dir: ${LEASE_DOCUMENTS_DIR:./data/lease-documents}
   cors:
     allowed-origin: ${APP_BASE_URL:http://localhost:4200}
   cookie:

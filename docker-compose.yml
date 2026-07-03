@@ -30,6 +30,8 @@ services:
       CMI_CALLBACK_URL: ${CMI_CALLBACK_URL}
       EMAIL_API_KEY: ${EMAIL_API_KEY}
       APP_BASE_URL: ${APP_BASE_URL}
+    volumes:
+      - darkom_lease_documents:/app/data/lease-documents
     depends_on:
       db:
         condition: service_healthy
@@ -42,3 +44,4 @@ services:
 
 volumes:
   darkom_pgdata:
+  darkom_lease_documents:

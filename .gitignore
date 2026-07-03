@@ -3,6 +3,7 @@
 
 # Backend (Maven/Java)
 backend/target/
+backend/data/
 
 # Frontend (Node/Angular)
 frontend/node_modules/

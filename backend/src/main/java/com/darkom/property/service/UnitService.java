@@ -34,6 +34,11 @@ public class UnitService {
         .toList();
   }
 
+  @Transactional(readOnly = true)
+  public UnitResponse get(UUID unitId, UUID userId) {
+    return UnitResponse.from(accessibleOrThrow(unitId, userId));
+  }
+
   @Transactional
   public UnitResponse create(UUID propertyId, UUID userId, UnitRequest request) {
     propertyService.accessibleOrThrow(propertyId, userId);
@@ -68,6 +73,15 @@ public class UnitService {
     unit.setUpdatedAt(clock.instant());
 
     return UnitResponse.from(unitRepository.save(unit));
+  }
+
+  /** Called by LeaseService once a lease is created for this unit. */
+  @Transactional
+  public void markOccupied(UUID unitId, UUID userId) {
+    Unit unit = accessibleOrThrow(unitId, userId);
+    unit.setStatus(UnitStatus.OCCUPIED);
+    unit.setUpdatedAt(clock.instant());
+    unitRepository.save(unit);
   }
 
   private Unit accessibleOrThrow(UUID unitId, UUID userId) {
