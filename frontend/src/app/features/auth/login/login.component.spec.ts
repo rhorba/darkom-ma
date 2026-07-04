@@ -69,4 +69,16 @@ describe('LoginComponent', () => {
     expect(component.errorMessage()).toBe('Email ou mot de passe incorrect.');
     expect(component.isSubmitting()).toBeFalse();
   });
+
+  it('shows a generic error message for a non-credentials failure', () => {
+    component.form.setValue({ email: 'a@example.com', password: 'supersecretpw' });
+
+    component.submit();
+    httpMock
+      .expectOne(`${API_BASE_URL}/api/v1/auth/login`)
+      .flush({ detail: 'Server error' }, { status: 500, statusText: 'Internal Server Error' });
+
+    expect(component.errorMessage()).toBe('Une erreur est survenue. Veuillez réessayer.');
+    expect(component.isSubmitting()).toBeFalse();
+  });
 });
