@@ -4,7 +4,7 @@
 **Version**: 1.0 | **Date**: 2026-07-02 | **Author**: Software Architect
 
 ## 1. Overview
-A modular-monolith Spring Boot 3 (Java 21) API backing an Angular SPA, with PostgreSQL as the single datastore. Modules are package-by-feature inside one deployable, keeping a clean path to extraction later without paying microservice costs now.
+A modular-monolith Spring Boot 4 (Java 21) API backing an Angular SPA, with PostgreSQL as the single datastore. Modules are package-by-feature inside one deployable, keeping a clean path to extraction later without paying microservice costs now.
 
 ## 2. Architecture Decision Records
 
@@ -14,9 +14,9 @@ A modular-monolith Spring Boot 3 (Java 21) API backing an Angular SPA, with Post
 - **Alternatives**: NgModule-based Angular (rejected — standalone is the current idiomatic default, less boilerplate).
 - **Consequences**: No SSR by default (SPA served as static build via Nginx). Fine for an authenticated dashboard app — SEO isn't a requirement here (behind login).
 
-### ADR-2: Spring Boot 3.x on Java 21 for the backend
+### ADR-2: Spring Boot on Java 21 for the backend
 - **Context**: User specified Java 21 + Spring Boot explicitly, replacing the prior Node/Next.js API routes.
-- **Decision**: Spring Boot 3.3+ (Java 21 baseline), Spring Web (REST), Spring Data JPA, Spring Security.
+- **Decision**: Spring Boot 4.1.0 (Java 21 baseline), Spring Web (REST), Spring Data JPA, Spring Security.
 - **Alternatives**: Quarkus/Micronaut — rejected, Spring Boot is the de facto standard, best docs/ecosystem for a small team.
 - **Consequences**: Standard layered structure per module: `controller → service → repository → entity`.
 
@@ -60,22 +60,46 @@ Unit ──1:N──> MaintenanceRequest ──N:1──> User (as Tenant, repor
 User ──N:N──> Property (as Property Manager, via property_managers join table)
 ```
 
+*As-built note: `payments.reminder_sent_at` (V5 migration) tracks whether Story 3.2's daily reminder job has already emailed a tenant for a given payment, so it isn't re-sent every day the window is open.*
+
 ## 5. API Design
+As-built, grouped by module (`com.darkom.{auth, property, lease, payment, maintenance, user}`; see ADR-5).
+
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
+| POST | /api/v1/auth/register | Create an account (LANDLORD/TENANT/PROPERTY_MANAGER only - no ADMIN self-registration by design) | Public |
 | POST | /api/v1/auth/login | Authenticate, issue JWT | Public |
 | POST | /api/v1/auth/refresh | Refresh access token | Refresh cookie |
-| GET | /api/v1/properties | List landlord's properties | Landlord/PM |
-| POST | /api/v1/properties | Create property | Landlord/PM |
+| GET | /api/v1/properties | List accessible properties | Landlord/PM |
+| POST | /api/v1/properties | Create property | Landlord |
+| GET | /api/v1/properties/:id | Get property detail | Landlord/PM (owner or granted) |
+| PATCH | /api/v1/properties/:id | Update property | Landlord/PM (owner or granted) |
+| POST | /api/v1/properties/:id/archive | Archive property | Landlord/PM (owner or granted) |
 | GET | /api/v1/properties/:id/units | List units for a property | Landlord/PM |
-| POST | /api/v1/leases | Create lease (generates PDF) | Landlord/PM |
-| GET | /api/v1/leases/:id | Get lease detail | Owner (Landlord/Tenant on that lease) |
-| GET | /api/v1/leases/:id/document | Download lease PDF | Owner |
-| POST | /api/v1/payments/:leaseId/initiate | Start CMI payment session | Tenant (own lease) |
+| POST | /api/v1/properties/:id/units | Create unit | Landlord/PM |
+| GET | /api/v1/properties/:id/managers | List a property's delegated PMs | Landlord/PM (owner or granted) |
+| POST | /api/v1/properties/:id/managers | Grant a PM access to a property (Story 5.1) | Landlord (owner only, not a delegated PM) |
+| DELETE | /api/v1/properties/:id/managers/:managerId | Revoke a PM's access | Landlord (owner only) |
+| PATCH | /api/v1/units/:id | Update unit | Landlord/PM |
+| POST | /api/v1/units/:id/archive | Archive unit | Landlord/PM |
+| POST | /api/v1/leases | Create lease (generates PDF, creates the first PENDING payment) | Landlord/PM |
+| GET | /api/v1/leases/mine | Tenant's current active lease | Tenant |
+| GET | /api/v1/leases/:id | Get lease detail | Owner (Landlord/PM/Tenant on that lease), Admin |
+| GET | /api/v1/leases/:id/payments | Payment history for a lease | Same access as lease detail |
+| GET | /api/v1/leases/:id/document | Download lease PDF | Same access as lease detail |
+| POST | /api/v1/payments/:leaseId/initiate | Start a CMI payment session | Tenant (own lease) |
 | POST | /api/v1/payments/cmi/callback | CMI server-to-server callback | CMI (signature-verified, not user auth) |
-| POST | /api/v1/maintenance | Submit maintenance request | Tenant |
-| PATCH | /api/v1/maintenance/:id | Update request status | Landlord/PM |
+| GET | /mock-cmi/pay/:transactionId | Mock CMI hosted payment page (Story 3.1 - no real CMI merchant account exists; see SDR-3) | Public (stands in for an external bank page) |
+| POST | /mock-cmi/pay/:transactionId/succeed, /fail | Mock CMI simulates a bank webhook back to our own callback | Public |
+| POST | /api/v1/maintenance | Submit maintenance request (multipart: description + optional photo) | Tenant (must hold an active lease on the unit) |
+| GET | /api/v1/maintenance/mine | Tenant's own maintenance requests | Tenant |
+| GET | /api/v1/maintenance | Landlord/PM's maintenance inbox | Landlord/PM |
+| PATCH | /api/v1/maintenance/:id | Update request status | Landlord/PM (deliberately not the reporting Tenant, not Admin) |
+| GET | /api/v1/maintenance/:id/photo | Download the attached photo | Reporting Tenant, owning Landlord/PM, or Admin |
 | GET | /api/v1/admin/users | List all users | Admin |
+| PATCH | /api/v1/admin/users/:id/deactivate | Deactivate a user (blocks future login) | Admin |
+
+**Internal, not client-facing**: a daily `@Scheduled` job (`RentReminderJob`, `com.darkom.notification`) generates each lease's next monthly payment and emails (mocked - `MockEmailSender`) a reminder once a payment nears its due date. No real transactional email provider is configured yet (`EMAIL_API_KEY` is a placeholder).
 
 ## 6. Security Considerations
 [Full detail in docs/security-darkom.md — summary here]
@@ -83,6 +107,7 @@ User ──N:N──> Property (as Property Manager, via property_managers join 
 - Authorization: Role + resource-ownership checks (e.g., a Tenant can only see their own lease) enforced at the service layer, not just annotations.
 - Data protection: TLS everywhere; CMI card data never touches our backend (redirect/tokenized flow); passwords hashed with BCrypt.
 - Key risks: CMI callback endpoint must verify CMI's signature to prevent forged "payment succeeded" calls — flagged as a must-have, not optional.
+- **Gotcha for future SecurityConfig changes**: `/error` must stay in the `permitAll()` list. Spring Boot's default error handling forwards a rejected request internally to `GET /error` to render the JSON error body; without that path permitted, the forward is re-evaluated as an anonymous request and its `AuthenticationEntryPoint` silently overwrites a correct 403 with 401. MockMvc-based tests never catch this (see `SecurityErrorResponseTest`, which uses a real embedded server specifically because of it).
 
 ## 7. Infrastructure
 - Hosting: Local Docker Compose (localhost) for MVP — see docs/devops-darkom.md.

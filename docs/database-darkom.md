@@ -123,6 +123,10 @@ CREATE TABLE maintenance_requests (
 | Migration File | Description | Reversible |
 |---|---|---|
 | V1__initial_schema.sql | Creates users, properties, property_managers, units, leases, lease_documents, payments, maintenance_requests + indexes | Yes (Flyway `undo` not used; rollback via new down-migration if ever needed) |
+| V2__refresh_tokens.sql | Adds `refresh_tokens` table (SHA-256-hashed opaque tokens, DB-tracked rotation - see ADR-3/security doc) | Yes |
+| V3__archive_properties_units.sql | Adds `archived_at` to `properties` and `units` (soft-archive, not hard delete) | Yes |
+| V4__lease_double_booking_prevention.sql | Partial unique index `idx_leases_unit_active` on `leases(unit_id) WHERE status = 'ACTIVE'` - prevents two active leases on the same unit at the DB level, not just in application logic | Yes |
+| V5__payment_reminder_tracking.sql | Adds `payments.reminder_sent_at` - without it the daily reminder job (Story 3.2) would re-email the same tenant every day the reminder window is open | Yes |
 
 *Flyway manages migrations under `backend/src/main/resources/db/migration/`. One file per schema change going forward, never edit an already-applied migration.*
 
