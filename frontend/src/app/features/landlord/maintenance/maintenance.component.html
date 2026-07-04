@@ -1,0 +1,45 @@
+<mat-toolbar>
+  <span>Demandes de maintenance</span>
+</mat-toolbar>
+
+<table mat-table [dataSource]="requests()" class="requests-table">
+  <ng-container matColumnDef="description">
+    <th mat-header-cell *matHeaderCellDef>Description</th>
+    <td mat-cell *matCellDef="let request">{{ request.description }}</td>
+  </ng-container>
+
+  <ng-container matColumnDef="status">
+    <th mat-header-cell *matHeaderCellDef>Statut</th>
+    <td mat-cell *matCellDef="let request">
+      <mat-select
+        [value]="request.status"
+        (selectionChange)="updateStatus(request, $event.value)"
+      >
+        @for (status of statuses; track status) {
+          <mat-option [value]="status">{{ status }}</mat-option>
+        }
+      </mat-select>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="photo">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let request">
+      @if (request.hasPhoto) {
+        <button mat-button (click)="viewPhoto(request)">Voir la photo</button>
+      }
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="createdAt">
+    <th mat-header-cell *matHeaderCellDef>Envoyée le</th>
+    <td mat-cell *matCellDef="let request">{{ request.createdAt }}</td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+</table>
+
+@if (requests().length === 0) {
+  <p class="empty-state">Aucune demande pour le moment.</p>
+}

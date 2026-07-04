@@ -54,6 +54,10 @@ public class SecurityConfig {
                     .hasAnyRole("LANDLORD", "PROPERTY_MANAGER")
                     .requestMatchers("/api/v1/payments/*/initiate")
                     .hasRole("TENANT")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/maintenance")
+                    .hasRole("TENANT")
+                    .requestMatchers(HttpMethod.PATCH, "/api/v1/maintenance/*")
+                    .hasAnyRole("LANDLORD", "PROPERTY_MANAGER")
                     .anyRequest()
                     .authenticated())
         .exceptionHandling(

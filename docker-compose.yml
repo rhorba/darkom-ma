@@ -34,6 +34,7 @@ services:
       REMINDER_CRON: "${REMINDER_CRON:-0 0 8 * * *}"
     volumes:
       - darkom_lease_documents:/app/data/lease-documents
+      - darkom_maintenance_photos:/app/data/maintenance-photos
     depends_on:
       db:
         condition: service_healthy
@@ -47,3 +48,4 @@ services:
 volumes:
   darkom_pgdata:
   darkom_lease_documents:
+  darkom_maintenance_photos:

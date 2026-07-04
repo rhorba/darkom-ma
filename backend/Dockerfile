@@ -9,7 +9,7 @@ RUN ./mvnw -q -DskipTests package
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-RUN mkdir -p /app/data/lease-documents && chown -R 1000:1000 /app/data
+RUN mkdir -p /app/data/lease-documents /app/data/maintenance-photos && chown -R 1000:1000 /app/data
 EXPOSE 8080
 USER 1000:1000
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class StorageProperties {
 
   private String leaseDocumentsDir;
+  private String maintenancePhotosDir;
 
   public String getLeaseDocumentsDir() {
     return leaseDocumentsDir;
@@ -13,5 +14,13 @@ public class StorageProperties {
 
   public void setLeaseDocumentsDir(String leaseDocumentsDir) {
     this.leaseDocumentsDir = leaseDocumentsDir;
+  }
+
+  public String getMaintenancePhotosDir() {
+    return maintenancePhotosDir;
+  }
+
+  public void setMaintenancePhotosDir(String maintenancePhotosDir) {
+    this.maintenancePhotosDir = maintenancePhotosDir;
   }
 }

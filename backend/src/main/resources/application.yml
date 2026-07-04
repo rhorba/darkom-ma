@@ -12,6 +12,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 server:
   port: 8080
@@ -25,6 +29,7 @@ management:
 app:
   storage:
     lease-documents-dir: ${LEASE_DOCUMENTS_DIR:./data/lease-documents}
+    maintenance-photos-dir: ${MAINTENANCE_PHOTOS_DIR:./data/maintenance-photos}
   cors:
     allowed-origin: ${APP_BASE_URL:http://localhost:4200}
   cookie:

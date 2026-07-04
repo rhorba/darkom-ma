@@ -3,9 +3,11 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { roleGuard } from './core/auth/role.guard';
 import { LoginComponent } from './features/auth/login/login.component';
+import { MaintenanceComponent } from './features/landlord/maintenance/maintenance.component';
 import { PropertiesComponent } from './features/landlord/properties/properties.component';
 import { PropertyDetailComponent } from './features/landlord/properties/property-detail/property-detail.component';
 import { MyLeaseComponent } from './features/tenant/my-lease/my-lease.component';
+import { MyMaintenanceComponent } from './features/tenant/my-maintenance/my-maintenance.component';
 import { UsersComponent } from './features/admin/users/users.component';
 
 export const routes: Routes = [
@@ -21,8 +23,18 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard(['LANDLORD', 'PROPERTY_MANAGER'])]
   },
   {
+    path: 'maintenance',
+    component: MaintenanceComponent,
+    canActivate: [authGuard, roleGuard(['LANDLORD', 'PROPERTY_MANAGER'])]
+  },
+  {
     path: 'my-lease',
     component: MyLeaseComponent,
+    canActivate: [authGuard, roleGuard(['TENANT'])]
+  },
+  {
+    path: 'my-maintenance',
+    component: MyMaintenanceComponent,
     canActivate: [authGuard, roleGuard(['TENANT'])]
   },
   {
