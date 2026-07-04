@@ -35,6 +35,16 @@ public class PropertyService {
     return PropertyResponse.from(accessibleOrThrow(id, userId));
   }
 
+  /**
+   * No ownership check - only safe to call once the caller's relationship to some other resource
+   * that references this property has already been verified (see UnitService.getRaw's doc).
+   */
+  @Transactional(readOnly = true)
+  public PropertyResponse getRaw(UUID id) {
+    return PropertyResponse.from(
+        propertyRepository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id)));
+  }
+
   @Transactional
   public PropertyResponse create(UUID landlordId, PropertyRequest request) {
     Instant now = clock.instant();

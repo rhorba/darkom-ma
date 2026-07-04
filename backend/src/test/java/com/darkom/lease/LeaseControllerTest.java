@@ -310,6 +310,88 @@ class LeaseControllerTest extends AbstractIntegrationTest {
   }
 
   @Test
+  void mineReturnsTheTenantsActiveLeaseWithUnitAndPropertyDetails() throws Exception {
+    String landlordToken = registerAndLogin(uniqueEmail("landlord"), "LANDLORD");
+    String tenantEmail = uniqueEmail("tenant");
+    String tenantToken = registerAndLogin(tenantEmail, "TENANT");
+    String unitId = createPropertyAndUnit(landlordToken).unitId();
+
+    mockMvc
+        .perform(
+            post("/api/v1/leases")
+                .header("Authorization", "Bearer " + landlordToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(leaseJson(unitId, tenantEmail, "2026-01-01", "2026-12-31")))
+        .andExpect(status().isCreated());
+
+    mockMvc
+        .perform(get("/api/v1/leases/mine").header("Authorization", "Bearer " + tenantToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unitLabel").value("Apt 1"))
+        .andExpect(jsonPath("$.propertyName").value("Villa Zaytouna"));
+  }
+
+  @Test
+  void mineReturns404WhenTenantHasNoActiveLease() throws Exception {
+    String tenantToken = registerAndLogin(uniqueEmail("tenant"), "TENANT");
+
+    mockMvc
+        .perform(get("/api/v1/leases/mine").header("Authorization", "Bearer " + tenantToken))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void paymentsListsHistoryForTheLeaseOwningTenant() throws Exception {
+    String landlordToken = registerAndLogin(uniqueEmail("landlord"), "LANDLORD");
+    String tenantEmail = uniqueEmail("tenant");
+    String tenantToken = registerAndLogin(tenantEmail, "TENANT");
+    String unitId = createPropertyAndUnit(landlordToken).unitId();
+
+    MvcResult createResult =
+        mockMvc
+            .perform(
+                post("/api/v1/leases")
+                    .header("Authorization", "Bearer " + landlordToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(leaseJson(unitId, tenantEmail, "2026-01-01", "2026-12-31")))
+            .andReturn();
+    String leaseId = JsonPath.read(createResult.getResponse().getContentAsString(), "$.id");
+
+    mockMvc
+        .perform(
+            get("/api/v1/leases/" + leaseId + "/payments")
+                .header("Authorization", "Bearer " + tenantToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)))
+        .andExpect(jsonPath("$[0].status").value("PENDING"));
+  }
+
+  @Test
+  void paymentsRejectsAnUnrelatedTenant() throws Exception {
+    String landlordToken = registerAndLogin(uniqueEmail("landlord"), "LANDLORD");
+    String tenantEmail = uniqueEmail("tenant");
+    String otherTenantToken = registerAndLogin(uniqueEmail("other"), "TENANT");
+    registerAndLogin(tenantEmail, "TENANT");
+    String unitId = createPropertyAndUnit(landlordToken).unitId();
+
+    MvcResult createResult =
+        mockMvc
+            .perform(
+                post("/api/v1/leases")
+                    .header("Authorization", "Bearer " + landlordToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(leaseJson(unitId, tenantEmail, "2026-01-01", "2026-12-31")))
+            .andReturn();
+    String leaseId = JsonPath.read(createResult.getResponse().getContentAsString(), "$.id");
+
+    mockMvc
+        .perform(
+            get("/api/v1/leases/" + leaseId + "/payments")
+                .header("Authorization", "Bearer " + otherTenantToken))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
   void concurrentLeaseCreationOnTheSameUnitOnlyLetsOneSucceed() throws Exception {
     String landlordToken = registerAndLogin(uniqueEmail("landlord"), "LANDLORD");
     String tenant1Email = uniqueEmail("tenant1");

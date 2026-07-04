@@ -8,6 +8,10 @@ export interface Lease {
   endDate: string;
   monthlyRent: number;
   status: LeaseStatus;
+  unitLabel: string;
+  propertyName: string;
+  propertyAddress: string;
+  propertyCity: string;
 }
 
 export interface LeaseRequest {

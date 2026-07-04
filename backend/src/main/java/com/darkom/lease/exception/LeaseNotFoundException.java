@@ -10,4 +10,8 @@ public class LeaseNotFoundException extends RuntimeException {
   public LeaseNotFoundException(UUID id) {
     super("Lease not found: " + id);
   }
+
+  public LeaseNotFoundException(String message) {
+    super(message);
+  }
 }

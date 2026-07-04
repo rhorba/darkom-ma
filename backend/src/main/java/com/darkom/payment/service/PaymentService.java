@@ -46,6 +46,14 @@ public class PaymentService {
     this.clock = clock;
   }
 
+  @Transactional(readOnly = true)
+  public List<PaymentResponse> listForLease(UUID leaseId, UUID currentUserId) {
+    leaseService.get(leaseId, currentUserId); // throws LeaseNotFoundException if inaccessible
+    return paymentRepository.findAllByLeaseIdOrderByDueDateDesc(leaseId).stream()
+        .map(PaymentResponse::from)
+        .toList();
+  }
+
   @Transactional
   public PaymentInitiationResponse initiate(UUID leaseId, UUID currentUserId) {
     LeaseResponse lease = leaseService.get(leaseId, currentUserId);

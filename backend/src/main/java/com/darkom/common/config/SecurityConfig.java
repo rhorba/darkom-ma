@@ -40,7 +40,10 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
-                        "/actuator/health", "/api/v1/auth/**", "/api/v1/payments/cmi/callback")
+                        "/actuator/health",
+                        "/api/v1/auth/**",
+                        "/api/v1/payments/cmi/callback",
+                        "/mock-cmi/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/properties")
                     .hasRole("LANDLORD")

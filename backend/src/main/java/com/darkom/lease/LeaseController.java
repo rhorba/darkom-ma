@@ -3,8 +3,11 @@ package com.darkom.lease;
 import com.darkom.lease.dto.LeaseRequest;
 import com.darkom.lease.dto.LeaseResponse;
 import com.darkom.lease.service.LeaseService;
+import com.darkom.payment.dto.PaymentResponse;
+import com.darkom.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -26,9 +29,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class LeaseController {
 
   private final LeaseService leaseService;
+  private final PaymentService paymentService;
 
-  public LeaseController(LeaseService leaseService) {
+  public LeaseController(LeaseService leaseService, PaymentService paymentService) {
     this.leaseService = leaseService;
+    this.paymentService = paymentService;
   }
 
   @PostMapping
@@ -38,9 +43,20 @@ public class LeaseController {
     return leaseService.create(userId, request);
   }
 
+  @GetMapping("/mine")
+  public LeaseResponse getMine(@AuthenticationPrincipal UUID userId) {
+    return leaseService.getMine(userId);
+  }
+
   @GetMapping("/{id}")
   public LeaseResponse get(@PathVariable UUID id, @AuthenticationPrincipal UUID userId) {
     return leaseService.get(id, userId);
+  }
+
+  @GetMapping("/{id}/payments")
+  public List<PaymentResponse> listPayments(
+      @PathVariable UUID id, @AuthenticationPrincipal UUID userId) {
+    return paymentService.listForLease(id, userId);
   }
 
   @GetMapping("/{id}/document")

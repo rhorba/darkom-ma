@@ -1,0 +1,54 @@
+<mat-toolbar>
+  <span>Mon bail</span>
+</mat-toolbar>
+
+@if (lease(); as l) {
+  <div class="lease-summary">
+    <h2>{{ l.unitLabel }} — {{ l.propertyName }}</h2>
+    <p class="address">{{ l.propertyAddress }}, {{ l.propertyCity }}</p>
+    <p>Loyer : {{ l.monthlyRent }} MAD / mois</p>
+    <p>Du {{ l.startDate }} au {{ l.endDate }}</p>
+
+    @if (nextPendingPayment(); as next) {
+      <p class="next-payment">
+        Prochain paiement : {{ next.amount }} MAD, échéance {{ next.dueDate }} —
+        <strong>EN ATTENTE</strong>
+      </p>
+      <button mat-raised-button color="primary" (click)="payNow()">Payer maintenant</button>
+    }
+
+    <button mat-button (click)="downloadDocument()">Télécharger le contrat PDF</button>
+  </div>
+
+  <h3>Historique des paiements</h3>
+  <table mat-table [dataSource]="payments()" class="payments-table">
+    <ng-container matColumnDef="dueDate">
+      <th mat-header-cell *matHeaderCellDef>Échéance</th>
+      <td mat-cell *matCellDef="let payment">{{ payment.dueDate }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="amount">
+      <th mat-header-cell *matHeaderCellDef>Montant</th>
+      <td mat-cell *matCellDef="let payment">{{ payment.amount }} MAD</td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Statut</th>
+      <td mat-cell *matCellDef="let payment">{{ payment.status }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="paidAt">
+      <th mat-header-cell *matHeaderCellDef>Payé le</th>
+      <td mat-cell *matCellDef="let payment">{{ payment.paidAt ?? '—' }}</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+
+  @if (payments().length === 0) {
+    <p class="empty-state">Aucun paiement pour le moment.</p>
+  }
+} @else if (hasNoActiveLease()) {
+  <p class="empty-state">Aucun bail actif pour le moment.</p>
+}

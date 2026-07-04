@@ -57,7 +57,11 @@ class PaymentServiceTest {
         LocalDate.of(2026, 1, 1),
         LocalDate.of(2026, 12, 31),
         new BigDecimal("3500.00"),
-        LeaseStatus.ACTIVE);
+        LeaseStatus.ACTIVE,
+        "Apt 1",
+        "Villa Zaytouna",
+        "12 Rue des Oliviers",
+        "Rabat");
   }
 
   private Payment pendingPayment(UUID leaseId, BigDecimal amount) {
@@ -112,6 +116,32 @@ class PaymentServiceTest {
     assertThat(result.cmiTransactionId()).isNotBlank();
     assertThat(result.redirectUrl()).isEqualTo("http://localhost:8080/mock-cmi/pay/txn");
     assertThat(payment.getCmiTransactionId()).isEqualTo(result.cmiTransactionId());
+  }
+
+  @Test
+  void listForLeaseReturnsPaymentsOrderedByDueDateDescending() {
+    UUID leaseId = UUID.randomUUID();
+    UUID tenantId = UUID.randomUUID();
+    Payment payment = pendingPayment(leaseId, new BigDecimal("3500.00"));
+    when(leaseService.get(leaseId, tenantId)).thenReturn(lease(leaseId, tenantId));
+    when(paymentRepository.findAllByLeaseIdOrderByDueDateDesc(leaseId))
+        .thenReturn(List.of(payment));
+
+    var result = paymentService.listForLease(leaseId, tenantId);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).id()).isEqualTo(payment.getId());
+  }
+
+  @Test
+  void listForLeasePropagatesTheLeaseAccessCheck() {
+    UUID leaseId = UUID.randomUUID();
+    UUID strangerId = UUID.randomUUID();
+    when(leaseService.get(leaseId, strangerId))
+        .thenThrow(new com.darkom.lease.exception.LeaseNotFoundException(leaseId));
+
+    assertThatThrownBy(() -> paymentService.listForLease(leaseId, strangerId))
+        .isInstanceOf(com.darkom.lease.exception.LeaseNotFoundException.class);
   }
 
   private CmiCallbackRequest callback(

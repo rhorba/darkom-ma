@@ -148,12 +148,29 @@ public class LeaseService {
     firstPayment.setUpdatedAt(now);
     paymentRepository.save(firstPayment);
 
-    return LeaseResponse.from(lease);
+    return LeaseResponse.from(lease, unit, property);
   }
 
   @Transactional(readOnly = true)
   public LeaseResponse get(UUID leaseId, UUID currentUserId) {
-    return LeaseResponse.from(accessibleOrThrow(leaseId, currentUserId));
+    Lease lease = accessibleOrThrow(leaseId, currentUserId);
+    return enrich(lease);
+  }
+
+  @Transactional(readOnly = true)
+  public LeaseResponse getMine(UUID currentUserId) {
+    Lease lease =
+        leaseRepository
+            .findByTenantIdAndStatus(currentUserId, LeaseStatus.ACTIVE)
+            .orElseThrow(() -> new LeaseNotFoundException("No active lease found"));
+    return enrich(lease);
+  }
+
+  /** Only safe once accessibleOrThrow (or an equivalent check) has already run for this lease. */
+  private LeaseResponse enrich(Lease lease) {
+    UnitResponse unit = unitService.getRaw(lease.getUnitId());
+    PropertyResponse property = propertyService.getRaw(unit.propertyId());
+    return LeaseResponse.from(lease, unit, property);
   }
 
   @Transactional(readOnly = true)

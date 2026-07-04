@@ -229,9 +229,12 @@ class LeaseServiceTest {
     lease.setEndDate(LocalDate.of(2026, 12, 31));
     lease.setMonthlyRent(new BigDecimal("3500.00"));
 
+    UUID propertyId = UUID.randomUUID();
     when(leaseRepository.findById(leaseId)).thenReturn(Optional.of(lease));
     when(userRepository.findById(tenantId))
         .thenReturn(Optional.of(user(tenantId, Role.TENANT, "t@example.com", "T")));
+    when(unitService.getRaw(lease.getUnitId())).thenReturn(unit(lease.getUnitId(), propertyId));
+    when(propertyService.getRaw(propertyId)).thenReturn(property(propertyId, UUID.randomUUID()));
 
     var result = leaseService.get(leaseId, tenantId);
 
@@ -251,9 +254,12 @@ class LeaseServiceTest {
     lease.setEndDate(LocalDate.of(2026, 12, 31));
     lease.setMonthlyRent(new BigDecimal("3500.00"));
 
+    UUID propertyId = UUID.randomUUID();
     when(leaseRepository.findById(leaseId)).thenReturn(Optional.of(lease));
     when(userRepository.findById(adminId))
         .thenReturn(Optional.of(user(adminId, Role.ADMIN, "admin@example.com", "Admin")));
+    when(unitService.getRaw(lease.getUnitId())).thenReturn(unit(lease.getUnitId(), propertyId));
+    when(propertyService.getRaw(propertyId)).thenReturn(property(propertyId, UUID.randomUUID()));
 
     var result = leaseService.get(leaseId, adminId);
 
@@ -303,6 +309,42 @@ class LeaseServiceTest {
     when(leaseDocumentRepository.findByLeaseId(leaseId)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> leaseService.getDocumentPath(leaseId, adminId))
+        .isInstanceOf(LeaseNotFoundException.class);
+  }
+
+  @Test
+  void getMineReturnsTheTenantsActiveLease() {
+    UUID leaseId = UUID.randomUUID();
+    UUID tenantId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+    Lease lease = new Lease();
+    lease.setId(leaseId);
+    lease.setUnitId(UUID.randomUUID());
+    lease.setTenantId(tenantId);
+    lease.setStatus(LeaseStatus.ACTIVE);
+    lease.setStartDate(LocalDate.of(2026, 1, 1));
+    lease.setEndDate(LocalDate.of(2026, 12, 31));
+    lease.setMonthlyRent(new BigDecimal("3500.00"));
+
+    when(leaseRepository.findByTenantIdAndStatus(tenantId, LeaseStatus.ACTIVE))
+        .thenReturn(Optional.of(lease));
+    when(unitService.getRaw(lease.getUnitId())).thenReturn(unit(lease.getUnitId(), propertyId));
+    when(propertyService.getRaw(propertyId)).thenReturn(property(propertyId, UUID.randomUUID()));
+
+    var result = leaseService.getMine(tenantId);
+
+    assertThat(result.id()).isEqualTo(leaseId);
+    assertThat(result.unitLabel()).isEqualTo("Apt 1");
+    assertThat(result.propertyName()).isEqualTo("Villa Zaytouna");
+  }
+
+  @Test
+  void getMineThrowsWhenTenantHasNoActiveLease() {
+    UUID tenantId = UUID.randomUUID();
+    when(leaseRepository.findByTenantIdAndStatus(tenantId, LeaseStatus.ACTIVE))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> leaseService.getMine(tenantId))
         .isInstanceOf(LeaseNotFoundException.class);
   }
 }

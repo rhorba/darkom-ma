@@ -108,7 +108,11 @@ describe('PropertyDetailComponent', () => {
       startDate: '2026-01-01',
       endDate: '2026-12-31',
       monthlyRent: 3500,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      unitLabel: 'Apt 1',
+      propertyName: 'Villa Zaytouna',
+      propertyAddress: '12 Rue des Oliviers',
+      propertyCity: 'Rabat'
     };
 
     fixture.detectChanges();

@@ -12,6 +12,8 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
   List<Payment> findAllByLeaseIdAndStatusOrderByDueDateAsc(UUID leaseId, PaymentStatus status);
 
+  List<Payment> findAllByLeaseIdOrderByDueDateDesc(UUID leaseId);
+
   Optional<Payment> findByCmiTransactionId(String cmiTransactionId);
 
   Optional<Payment> findTopByLeaseIdOrderByDueDateDesc(UUID leaseId);

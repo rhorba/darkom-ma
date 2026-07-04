@@ -1,0 +1,25 @@
+.lease-summary {
+  padding: var(--darkom-spacing-lg);
+}
+
+.address {
+  color: var(--darkom-text-muted);
+}
+
+.next-payment {
+  font-weight: 500;
+}
+
+h3 {
+  padding: 0 var(--darkom-spacing-lg);
+}
+
+.payments-table {
+  width: 100%;
+}
+
+.empty-state {
+  padding: var(--darkom-spacing-lg);
+  color: var(--darkom-text-muted);
+  text-align: center;
+}

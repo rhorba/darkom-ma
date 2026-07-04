@@ -39,6 +39,18 @@ public class UnitService {
     return UnitResponse.from(accessibleOrThrow(unitId, userId));
   }
 
+  /**
+   * No ownership check - only safe to call once the caller's relationship to some other resource
+   * (e.g. a lease) that references this unit has already been verified. Used to enrich a response
+   * for a caller (like a Tenant) who wouldn't pass the normal Landlord/PM ownership check but is
+   * still entitled to see this unit's basic display info in that context.
+   */
+  @Transactional(readOnly = true)
+  public UnitResponse getRaw(UUID unitId) {
+    return UnitResponse.from(
+        unitRepository.findById(unitId).orElseThrow(() -> new UnitNotFoundException(unitId)));
+  }
+
   @Transactional
   public UnitResponse create(UUID propertyId, UUID userId, UnitRequest request) {
     propertyService.accessibleOrThrow(propertyId, userId);
