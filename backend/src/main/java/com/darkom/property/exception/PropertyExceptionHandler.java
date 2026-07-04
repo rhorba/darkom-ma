@@ -17,4 +17,9 @@ public class PropertyExceptionHandler {
   public ProblemDetail handleUnitNotFound(UnitNotFoundException ex) {
     return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
   }
+
+  @ExceptionHandler(ManagerNotFoundException.class)
+  public ProblemDetail handleManagerNotFound(ManagerNotFoundException ex) {
+    return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+  }
 }

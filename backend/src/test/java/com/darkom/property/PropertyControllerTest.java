@@ -1,5 +1,6 @@
 package com.darkom.property;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -306,5 +307,164 @@ class PropertyControllerTest extends AbstractIntegrationTest {
                     {"label":"Apt 1","monthlyRent":0}
                     """))
         .andExpect(status().isBadRequest());
+  }
+
+  private String createProperty(String landlordToken) throws Exception {
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/api/v1/properties")
+                    .header("Authorization", "Bearer " + landlordToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(propertyJson("Villa Zaytouna")))
+            .andReturn();
+    return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+  }
+
+  @Test
+  void landlordGrantsManagerAccessAndTheManagerCanThenAccessTheProperty() throws Exception {
+    String landlordToken = registerAndLogin(uniqueEmail("landlord-grant"), "LANDLORD");
+    String pmEmail = uniqueEmail("pm-grant");
+    String pmToken = registerAndLogin(pmEmail, "PROPERTY_MANAGER");
+    String propertyId = createProperty(landlordToken);
+
+    mockMvc
+        .perform(
+            get("/api/v1/properties/" + propertyId).header("Authorization", "Bearer " + pmToken))
+        .andExpect(status().isNotFound());
+
+    mockMvc
+        .perform(
+            post("/api/v1/properties/" + propertyId + "/managers")
+                .header("Authorization", "Bearer " + landlordToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"managerEmail":"%s"}
+                    """
+                        .formatted(pmEmail)))
+        .andExpect(status().isCreated());
+
+    mockMvc
+        .perform(
+            get("/api/v1/properties/" + propertyId).header("Authorization", "Bearer " + pmToken))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(
+            get("/api/v1/properties/" + propertyId + "/managers")
+                .header("Authorization", "Bearer " + landlordToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].email").value(pmEmail));
+  }
+
+  @Test
+  void aPropertyManagerCannotGrantFurtherAccess() throws Exception {
+    String landlordToken = registerAndLogin(uniqueEmail("landlord-grant2"), "LANDLORD");
+    String pmEmail = uniqueEmail("pm-grant2");
+    String pmToken = registerAndLogin(pmEmail, "PROPERTY_MANAGER");
+    String otherPmEmail = uniqueEmail("other-pm");
+    registerAndLogin(otherPmEmail, "PROPERTY_MANAGER");
+    String propertyId = createProperty(landlordToken);
+
+    mockMvc.perform(
+        post("/api/v1/properties/" + propertyId + "/managers")
+            .header("Authorization", "Bearer " + landlordToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(
+                """
+                {"managerEmail":"%s"}
+                """
+                    .formatted(pmEmail)));
+
+    mockMvc
+        .perform(
+            post("/api/v1/properties/" + propertyId + "/managers")
+                .header("Authorization", "Bearer " + pmToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"managerEmail":"%s"}
+                    """
+                        .formatted(otherPmEmail)))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void aDifferentLandlordCannotGrantAccessToSomeoneElsesProperty() throws Exception {
+    String ownerToken = registerAndLogin(uniqueEmail("owner-grant"), "LANDLORD");
+    String otherLandlordToken = registerAndLogin(uniqueEmail("other-landlord-grant"), "LANDLORD");
+    String pmEmail = uniqueEmail("pm-grant3");
+    registerAndLogin(pmEmail, "PROPERTY_MANAGER");
+    String propertyId = createProperty(ownerToken);
+
+    mockMvc
+        .perform(
+            post("/api/v1/properties/" + propertyId + "/managers")
+                .header("Authorization", "Bearer " + otherLandlordToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"managerEmail":"%s"}
+                    """
+                        .formatted(pmEmail)))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void grantRejectsAnEmailThatIsNotAPropertyManager() throws Exception {
+    String landlordToken = registerAndLogin(uniqueEmail("landlord-grant3"), "LANDLORD");
+    String tenantEmail = uniqueEmail("tenant-grant");
+    registerAndLogin(tenantEmail, "TENANT");
+    String propertyId = createProperty(landlordToken);
+
+    mockMvc
+        .perform(
+            post("/api/v1/properties/" + propertyId + "/managers")
+                .header("Authorization", "Bearer " + landlordToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"managerEmail":"%s"}
+                    """
+                        .formatted(tenantEmail)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void landlordRevokesManagerAccess() throws Exception {
+    String landlordToken = registerAndLogin(uniqueEmail("landlord-revoke"), "LANDLORD");
+    String pmEmail = uniqueEmail("pm-revoke");
+    String pmToken = registerAndLogin(pmEmail, "PROPERTY_MANAGER");
+    String propertyId = createProperty(landlordToken);
+
+    mockMvc.perform(
+        post("/api/v1/properties/" + propertyId + "/managers")
+            .header("Authorization", "Bearer " + landlordToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(
+                """
+                {"managerEmail":"%s"}
+                """
+                    .formatted(pmEmail)));
+
+    MvcResult managersResult =
+        mockMvc
+            .perform(
+                get("/api/v1/properties/" + propertyId + "/managers")
+                    .header("Authorization", "Bearer " + landlordToken))
+            .andReturn();
+    String managerId = JsonPath.read(managersResult.getResponse().getContentAsString(), "$[0].id");
+
+    mockMvc
+        .perform(
+            delete("/api/v1/properties/" + propertyId + "/managers/" + managerId)
+                .header("Authorization", "Bearer " + landlordToken))
+        .andExpect(status().isNoContent());
+
+    mockMvc
+        .perform(
+            get("/api/v1/properties/" + propertyId).header("Authorization", "Bearer " + pmToken))
+        .andExpect(status().isNotFound());
   }
 }

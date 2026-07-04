@@ -40,11 +40,16 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
+                        "/error",
                         "/actuator/health",
                         "/api/v1/auth/**",
                         "/api/v1/payments/cmi/callback",
                         "/mock-cmi/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/properties/*/managers")
+                    .hasRole("LANDLORD")
+                    .requestMatchers(HttpMethod.DELETE, "/api/v1/properties/*/managers/*")
+                    .hasRole("LANDLORD")
                     .requestMatchers(HttpMethod.POST, "/api/v1/properties")
                     .hasRole("LANDLORD")
                     .requestMatchers(
@@ -58,6 +63,8 @@ public class SecurityConfig {
                     .hasRole("TENANT")
                     .requestMatchers(HttpMethod.PATCH, "/api/v1/maintenance/*")
                     .hasAnyRole("LANDLORD", "PROPERTY_MANAGER")
+                    .requestMatchers("/api/v1/admin/**")
+                    .hasRole("ADMIN")
                     .anyRequest()
                     .authenticated())
         .exceptionHandling(
