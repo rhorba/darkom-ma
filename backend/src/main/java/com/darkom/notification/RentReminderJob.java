@@ -17,13 +17,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Daily batch job (SDR-3: Spring {@code @Scheduled}, no message broker - reminders are a daily
  * batch, not real-time). Two jobs in one run since the second is meaningless without the first:
  * generate the next month's PENDING payment once a lease's latest payment falls inside the reminder
  * window, then send (and mark) reminders for PENDING payments due soon.
+ *
+ * <p>Deliberately <b>not</b> {@code @Transactional} at the run level. Sending mail is an outbound
+ * network call with no duration we control, and wrapping the run in one transaction would hold a
+ * pooled connection - and the rows it touched - for as long as the slowest SMTP response, draining
+ * the pool for every unrelated request. Each row here is independent, so each {@code save} commits
+ * on its own: no invariant spans two leases or two payments.
+ *
+ * <p>The mail is sent <i>before</i> the payment is marked, which makes reminders at-least-once. That
+ * is the right way round for this job - a duplicate reminder is a minor annoyance, a silently
+ * skipped one is a tenant who was never told. A failure on one payment is logged and the run
+ * continues, so one bad address cannot cost every later tenant their reminder.
  */
 @Component
 public class RentReminderJob {
@@ -57,7 +67,6 @@ public class RentReminderJob {
     runDailyJob();
   }
 
-  @Transactional
   void runDailyJob() {
     generateUpcomingPayments();
     sendReminders();
@@ -109,6 +118,25 @@ public class RentReminderJob {
   }
 
   private void sendReminderAndMark(Payment payment, User tenant) {
+    try {
+      sendReminder(payment, tenant);
+    } catch (RuntimeException ex) {
+      log.error(
+          "Reminder failed for payment {} (lease {}, tenant {}) - it stays unmarked and will be"
+              + " retried on the next run",
+          payment.getId(),
+          payment.getLeaseId(),
+          tenant.getId(),
+          ex);
+      return;
+    }
+
+    payment.setReminderSentAt(clock.instant());
+    payment.setUpdatedAt(clock.instant());
+    paymentRepository.save(payment);
+  }
+
+  private void sendReminder(Payment payment, User tenant) {
     emailSender.send(
         tenant.getEmail(),
         "Rappel de paiement de loyer",
@@ -119,9 +147,5 @@ public class RentReminderJob {
             + " MAD est du le "
             + payment.getDueDate()
             + ".\n\nMerci de proceder au paiement depuis votre espace Darkom.ma.");
-
-    payment.setReminderSentAt(clock.instant());
-    payment.setUpdatedAt(clock.instant());
-    paymentRepository.save(payment);
   }
 }
