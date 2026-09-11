@@ -30,8 +30,8 @@ import org.springframework.stereotype.Component;
  * the pool for every unrelated request. Each row here is independent, so each {@code save} commits
  * on its own: no invariant spans two leases or two payments.
  *
- * <p>The mail is sent <i>before</i> the payment is marked, which makes reminders at-least-once. That
- * is the right way round for this job - a duplicate reminder is a minor annoyance, a silently
+ * <p>The mail is sent <i>before</i> the payment is marked, which makes reminders at-least-once.
+ * That is the right way round for this job - a duplicate reminder is a minor annoyance, a silently
  * skipped one is a tenant who was never told. A failure on one payment is logged and the run
  * continues, so one bad address cannot cost every later tenant their reminder.
  */
